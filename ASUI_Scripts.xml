@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Asteria UI</name>
+			<packageName></packageName>
+			<script>-- A customizable, modular user interface for Asteria.</script>
+			<eventHandlerList />
+		</ScriptGroup>
+	</ScriptPackage>
+</MudletPackage>

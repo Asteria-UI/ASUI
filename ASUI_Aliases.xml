@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<AliasPackage>
+		<AliasGroup isActive="yes" isFolder="yes">
+			<name>Asteria UI</name>
+			<script>-- Aliases related to the use of the Asteria User Interface.</script>
+			<command></command>
+			<packageName></packageName>
+			<regex></regex>
+		</AliasGroup>
+	</AliasPackage>
+</MudletPackage>
