@@ -1,12 +1,138 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE MudletPackage>
 <MudletPackage version="1.001">
+	<TriggerPackage />
+	<TimerPackage />
+	<AliasPackage />
+	<ActionPackage />
 	<ScriptPackage>
 		<ScriptGroup isActive="yes" isFolder="yes">
 			<name>Asteria UI</name>
 			<packageName></packageName>
 			<script>-- A customizable, modular user interface for Asteria.</script>
 			<eventHandlerList />
+			<Script isActive="yes" isFolder="no">
+				<name>UI Variables</name>
+				<packageName></packageName>
+				<script>-- All variables and tables that allow the UI to function are at least created here, though sometimes defined elsewhere.
+
+-- Namespace
+
+asui = asui or {}
+asui.version = asui.version or "2.0"
+asui.container = asui.container or {}
+
+-- Char / Stat Box Variables
+
+-- Group Table
+
+-- Pet Table
+
+-- Aff and Def Box Variables
+
+-- Defense Variable
+
+-- Mob Info Box Variables
+
+-- Being Data Variables
+
+-- Inventory Box Variables
+
+-- Inventory Data Variables
+
+-- Toggles
+
+-- User Defined Settings
+
+asui.settings = asui.settings or {
+	light = "activate lantern",
+	heal = "drink health",
+	retreat = "retreat",
+	recall = "recall",
+	build = "Not Defined",
+	fonttype = "Ubuntu Mono",
+	leftborderpercent = 0.20,
+	leftpad = 0,
+	rightborderpercent = 0.30,
+	rightpad = 0,
+	tabfontsize = 15,
+	bodyfontsize = 10,
+	chatfontsize = 10,
+	toggleState = {Group = true, Light = false},
+	groupthm = 70,
+	groupthl = 40,
+}
+
+-- Custom Colors
+
+asui.settings.colors = asui.settings.colors or {
+exp = "OrangeRed",
+emphasis = "light_goldenrod",
+divider = "white",
+header = "DeepSkyBlue",
+highhp = "DarkGreen",
+midhp = "yellow",
+lowhp = "red",
+highmp = "DarkGreen",
+midmp = "yellow",
+lowmp = "red",
+gold = "yellow",
+worn = "green",
+tab = "DimGray",
+guild = "cyan",
+build = "white",
+players = "cyan",
+legends = "yellow",
+hostiles = "red",
+innocents = "LightSkyBlue",
+peacefuls = "cyan",
+activetab = "DarkGreen",
+inactivetab = "bisque",
+inactivetoggle = "Black",
+activetoggle = "DimGrey",
+offborder = "white",
+onborder = "LimeGreen",
+lowcount = "DarkOrange",
+highcount = "cyan",
+defense = "green",
+affliction = "red"
+}
+
+-- Vitals
+
+asui.vitals = asui.vitals or {
+	curhealth = 50,
+	maxhealth = 100,
+	curmana = 50,
+	maxmana = 100
+}
+
+-- Gauge Variables
+
+asui.useGauges = asui.useGauges or {
+	enabled = enabled or true
+}
+
+-- Chat Variables
+</script>
+				<eventHandlerList />
+			</Script>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>UI Elements</name>
+				<packageName></packageName>
+				<script>-- Individual UI element scripts. They're separated largely for ease of reading.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>Map</name>
+					<packageName></packageName>
+					<script></script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
 		</ScriptGroup>
 	</ScriptPackage>
+	<KeyPackage />
+	<HelpPackage>
+		<helpURL></helpURL>
+	</HelpPackage>
 </MudletPackage>
