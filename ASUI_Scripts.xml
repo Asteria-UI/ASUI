@@ -9,123 +9,1442 @@
 		<ScriptGroup isActive="yes" isFolder="yes">
 			<name>Asteria UI</name>
 			<packageName></packageName>
-			<script>-- A customizable, modular user interface for Asteria.</script>
+			<script>-- A customizable, modular user interface for Asteria.
+
+
+--[==[ Credits:
+
+
+* Based heavily on Zulah GUI 4.0. Original code found here: https://github.com/DigitalWarzone/zGUI
+
+* EMCO, fText and various other tools used in creating this inferface are the work of Demonnic. His work can be found here:
+https://github.com/demonnic
+
+* The mapping script used is a community project of many contributors. It can be found here:
+https://github.com/IRE-Mudlet-Mapping
+
+--]==]</script>
 			<eventHandlerList />
-			<Script isActive="yes" isFolder="no">
-				<name>UI Variables</name>
-				<packageName></packageName>
-				<script>-- All variables and tables that allow the UI to function are at least created here, though sometimes defined elsewhere.
-
--- Namespace
-
-asui = asui or {}
-asui.version = asui.version or "2.0"
-asui.container = asui.container or {}
-
--- Char / Stat Box Variables
-
--- Group Table
-
--- Pet Table
-
--- Aff and Def Box Variables
-
--- Defense Variable
-
--- Mob Info Box Variables
-
--- Being Data Variables
-
--- Inventory Box Variables
-
--- Inventory Data Variables
-
--- Toggles
-
--- User Defined Settings
-
-asui.settings = asui.settings or {
-	light = "activate lantern",
-	heal = "drink health",
-	retreat = "retreat",
-	recall = "recall",
-	build = "Not Defined",
-	fonttype = "Ubuntu Mono",
-	leftborderpercent = 0.20,
-	leftpad = 0,
-	rightborderpercent = 0.30,
-	rightpad = 0,
-	tabfontsize = 15,
-	bodyfontsize = 10,
-	chatfontsize = 10,
-	toggleState = {Group = true, Light = false},
-	groupthm = 70,
-	groupthl = 40,
-}
-
--- Custom Colors
-
-asui.settings.colors = asui.settings.colors or {
-exp = "OrangeRed",
-emphasis = "light_goldenrod",
-divider = "white",
-header = "DeepSkyBlue",
-highhp = "DarkGreen",
-midhp = "yellow",
-lowhp = "red",
-highmp = "DarkGreen",
-midmp = "yellow",
-lowmp = "red",
-gold = "yellow",
-worn = "green",
-tab = "DimGray",
-guild = "cyan",
-build = "white",
-players = "cyan",
-legends = "yellow",
-hostiles = "red",
-innocents = "LightSkyBlue",
-peacefuls = "cyan",
-activetab = "DarkGreen",
-inactivetab = "bisque",
-inactivetoggle = "Black",
-activetoggle = "DimGrey",
-offborder = "white",
-onborder = "LimeGreen",
-lowcount = "DarkOrange",
-highcount = "cyan",
-defense = "green",
-affliction = "red"
-}
-
--- Vitals
-
-asui.vitals = asui.vitals or {
-	curhealth = 50,
-	maxhealth = 100,
-	curmana = 50,
-	maxmana = 100
-}
-
--- Gauge Variables
-
-asui.useGauges = asui.useGauges or {
-	enabled = enabled or true
-}
-
--- Chat Variables
-</script>
-				<eventHandlerList />
-			</Script>
 			<ScriptGroup isActive="yes" isFolder="yes">
-				<name>UI Elements</name>
+				<name>Foundation</name>
 				<packageName></packageName>
-				<script>-- Individual UI element scripts. They're separated largely for ease of reading.</script>
+				<script>-- Scripts that are necessary for the other ones to work.
+
+-------------------------------------------------
+asui = asui or {}
+
+function asui.info(args)
+   cecho(string.format("%s", "&lt;lime_green&gt;[&lt;DarkTurquoise&gt;ASUI&lt;lime_green&gt;]&lt;light_grey&gt;: &lt;snow&gt;") .. args:title() .. "\n")
+end
+
+asui.modules = asui.modules or {}
+asui.styles = asui.styles or {  
+    ["greygroove"] = "background-color:rgba(0,0,0,0%); border: 5px groove grey;",
+    ["greengroove"] = "background-color:rgba(0,0,0,100%); border: 5px groove green;",
+    
+    ["dimgreyinset"] = "background-color:rgba(20,20,20,100%); border: 5px inset dimgray;",
+    ["greyinset"] = "background-color:rgba(0,0,0,100%); border: 10px inset grey;",
+    ["greeninset"] = "background-color:rgba(0,0,0,100%); border: 5px inset green;",
+    ["chaosinset"] = "background-color:rgba(0,40,100,100%); border: 5px inset purple;",
+    
+    ["greydouble"] = "background-color:rgba(0,0,0,0%); border: 5px double grey;",
+    ["greendouble"] = "background-color:rgba(0,0,0,50%); border: 5px double green;",    
+    ["golddouble"] = "background-color:rgba(0,0,0,50%); border: 5px double gold;",
+}
+
+asui.debug = false
+asui.trueTime = 0
+
+asui.vitals = {
+  h = 5000,
+ 	m = 5000,
+ 	maxh = 5000,
+ 	maxm = 5000,
+  oh = 5000, --old health
+  om = 5000, --old mana
+ 	xp = 0,
+  oxp = 0, --old xp
+}</script>
 				<eventHandlerList />
 				<Script isActive="yes" isFolder="no">
-					<name>Map</name>
+					<name>Initialization</name>
 					<packageName></packageName>
-					<script></script>
+					<script>-- Basically a start button in script form.
+
+local initEvent = registerAnonymousEventHandler("gmcp.Char", "asui.initUI", true)
+
+function asui.initUI() 
+ if not asui.running then
+  asui.running = true
+  
+-- USER SETTINGS
+--------------------------------------------------------------------
+-- These are user settings. They're saved locally, so that they'll persist even when you update to a new version of the UI.
+
+asui.settings = asui.settings or {
+  chatSize = 10,
+  balanceSize = 9,
+  healthbarSize = 9,
+  manabarSize = 9,
+  charstatSize = 9,
+  sitrepSize = 9,
+  promptSize = 9,
+  defenceSize = 9,
+  afflictionSize = 9,
+  roomDenizensSize = 9,
+  roomItemsSize = 9,
+  roomPlayersSize = 9,
+  roomSize = 9,
+  toggleSize = 9,
+  usePrompt = usePrompt or false,
+  }
+  
+-- DEFAULT STYLE  
+--------------------------------------------------------------------
+-- This will give the UI an appearance, even if you haven't set one.
+  
+  if not asui.useStyle then asui.useStyle = "dimgreyinset" end    
+                      
+  for k,v in pairs(asui.styles) do
+    if asui.useStyle == k then
+      asui.adjLabelstyle = v
+    end
+  end
+  
+-- MODULES 
+----------------------------------------------------------------------------------------------------------------------------------------
+-- Commenting out a module here will make it so that it won't appear in the togglebox.
+-- You shouldn't really need to do that, unless you're sure you'll *never* use a module.
+
+  if not table.contains(asui.modules, "Chat") then table.insert(asui.modules, "Chat") end
+  if not table.contains(asui.modules, "Map") then table.insert(asui.modules, "Map") end  
+  if not table.contains(asui.modules, "Balance") then table.insert(asui.modules, "Balance") end
+  if not table.contains(asui.modules, "Sitrep") then table.insert(asui.modules, "Sitrep") end
+  if not table.contains(asui.modules, "Prompt") then table.insert(asui.modules, "Prompt") end
+  if not table.contains(asui.modules, "Defence") then table.insert(asui.modules, "Defence") end
+  if not table.contains(asui.modules, "Affliction") then table.insert(asui.modules, "Affliction") end 
+  if not table.contains(asui.modules, "Room") then table.insert(asui.modules, "Room") end
+  if not table.contains(asui.modules, "Roomplayers") then table.insert(asui.modules, "Roomplayers") end
+  if not table.contains(asui.modules, "Roomdenizens") then table.insert(asui.modules, "Roomdenizens") end
+  if not table.contains(asui.modules, "Roomitems") then table.insert(asui.modules, "Roomitems") end
+  if not table.contains(asui.modules, "Charstat") then table.insert(asui.modules, "Charstat") end
+  if not table.contains(asui.modules, "Healthbar") then table.insert(asui.modules, "Healthbar") end
+  if not table.contains(asui.modules, "Manabar") then table.insert(asui.modules, "Manabar") end
+  if not table.contains(asui.modules, "Togglebox") then table.insert(asui.modules, "Togglebox") end
+    
+    for i=1, #asui.modules, 1 do
+      asui["build"..asui.modules[i]]()
+    end 
+    
+------------------------------------------------------------------------
+    
+    
+  --Adjustable.Container.hideAll()
+  --asui.buildTogglebox()
+  --Adjustable.Container:loadAll("default")
+  --asui.showTogglebox()
+  killAnonymousEventHandler(initEvent)
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>UI Styling</name>
+					<packageName></packageName>
+					<script>-- These styles can be edited or added to to allow you to change the look of your UI.
+
+function asui.restyle()
+  asui.styles = asui.styles or {  
+     -- https://doc.qt.io/qt-5/stylesheet-reference.html (more info)                      
+                                     --rgba(RED, GREEN, BLUE, Transparency)
+    ["greygroove"] = "background-color:rgba(0,0,0,0%); border: 5px groove grey;",
+    ["greengroove"] = "background-color:rgba(0,0,0,100%); border: 5px groove green;",
+    
+    ["dimgreyinset"] = "background-color:rgba(20,20,20,100%); border: 5px inset dimgray;",
+    ["greyinset"] = "background-color:rgba(0,0,0,100%); border: 10px inset grey;",
+    ["greeninset"] = "background-color:rgba(0,0,0,100%); border: 5px inset green;",
+    ["chaosinset"] = "background-color:rgba(0,40,100,100%); border: 5px inset purple;",
+    
+    ["greydouble"] = "background-color:rgba(0,0,0,0%); border: 5px double grey;",
+    ["greendouble"] = "background-color:rgba(0,0,0,50%); border: 5px double green;",    
+    ["golddouble"] = "background-color:rgba(0,0,0,50%); border: 5px double gold;",
+  }
+--------------------------------------------------------------------
+-- Which Style To Start With?  
+  if not asui.useStyle then asui.useStyle = "dimgreyinset" end
+  
+----------------------------------------------------------------------------------------------------------------------------------------
+                             
+  for k,v in pairs(asui.styles) do
+    if asui.useStyle == k then
+      asui.adjLabelstyle = v
+    end
+  end   
+  
+  for i=1, #asui.modules, 1 do
+    asui["build"..asui.modules[i]]()
+  end  
+----------------------------------------------------------------------------------------------------------------------------------------
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Toggle Box</name>
+				<packageName></packageName>
+				<script>-- A container full of toggles for the UI.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildTogglebox</name>
+					<packageName></packageName>
+					<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays various clickable toggles to enable or disable UI elements and change styles.
+
+function asui.buildTogglebox()
+  asui.settings.toggleboxSize = asui.settings.toggleboxSize or 9
+  asui.togglebox = {}
+
+  --Create the main Adjustable
+  asui.togglebox.window = Adjustable.Container:new({
+    name = "asui.togglebox.window",
+    x = 0, y = 0,
+    width = "25%",
+    height = "70%",   
+    adjLabelstyle = asui.adjLabelstyle,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+  },main)
+  
+  --Create the help Console
+  asui.togglebox.console = Geyser.MiniConsole:new({
+    name = "toggleDisp",
+    x = 0, y = "20%",
+    autoWrap = true,
+    scrollBar = false,
+    width = "100%",
+    height = "80%",
+    color="black",
+  },asui.togglebox.window)
+
+---------------------------------------------------------
+-- Window Style
+  asui.togglebox.windowStyle = Geyser.Label:new({
+    name="windowStyle",
+    x="1%",y="7%",
+    height="5%",width="98%",
+    nestable=true,
+    message="&lt;center&gt;Window Style: "..asui.useStyle.."&lt;/center&gt;"
+  },asui.togglebox.window)
+
+  for k,v in pairs(asui.styles) do
+    asui.togglebox.windowStyle[k] = asui.togglebox.windowStyle:addChild({
+      name=k.."WindowStyle",
+      x="1%",y="1%",
+      height=40,width=200,
+      layoutDir="BV",
+      flyOut=true,
+      message="&lt;center&gt;"..k.."&lt;/center&gt;"
+    })  
+    asui.togglebox.windowStyle[k]:setStyleSheet(asui.adjLabelstyle)
+    asui.togglebox.windowStyle[k]:setClickCallback("asui.styleSwap", k)    
+  end
+---------------------------------------------------------
+-- Map Explorer
+  asui.togglebox.mapExplorer = Geyser.Label:new({
+    name="mapExplorer",
+    x="1%",y="13%",
+    height="5%",width="98%",
+    message="&lt;center&gt;Map Explorer&lt;/center&gt;"
+  },asui.togglebox.window)
+  asui.togglebox.mapExplorer:setClickCallback("asui.mapExplorer")
+    
+---------------------------------------------------------
+-- Close All Windows
+  asui.togglebox.closeAll = Geyser.Label:new({
+    name="closeAll",
+    x="35%",y="1%",
+    height="5%",width="31%",
+    message="&lt;center&gt;Close ALL&lt;/center&gt;"
+  },asui.togglebox.window)
+  asui.togglebox.closeAll:setClickCallback("asui.closeAllWindows")
+
+---------------------------------------------------------
+-- Load Save Layout Buttons
+  asui.togglebox.load = Geyser.Label:new({
+    name="loadLayout",
+    x="1%",y="1%",
+    height="5%",width="33%",
+    nestable=true,
+    message="&lt;center&gt;Load&lt;/center&gt;"
+  },asui.togglebox.window)
+  
+  asui.togglebox.load.default = asui.togglebox.load:addChild({
+    name="loadDefaultLayout",
+    x="1%",y="1%",
+    height=40,width=200,
+    layoutDir="BV",
+    flyOut=true,
+    message="Load DEFAULT Layout"
+  })  
+  asui.togglebox.load.default:setStyleSheet(asui.adjLabelstyle)
+  asui.togglebox.load.default:setClickCallback("asui.loadDefault")
+
+  asui.togglebox.load.combat = asui.togglebox.load:addChild({
+    name="loadCombatLayout",
+    x="1%",y="1%",
+    height=40,width=200,
+    layoutDir="BV",
+    flyOut=true,
+    message="Load COMBAT Layout"
+  }) 
+  asui.togglebox.load.combat:setStyleSheet(asui.adjLabelstyle)
+  asui.togglebox.load.combat:setClickCallback("asui.loadCombat")
+  
+  asui.togglebox.save = Geyser.Label:new({
+    name="saveLayout",
+    x="67%",y="1%",
+    height="5%",width="32%",
+    nestable=true,
+    message="&lt;center&gt;Save&lt;/center&gt;"
+  },asui.togglebox.window)
+
+  asui.togglebox.save.default = asui.togglebox.save:addChild({
+    name="saveDefaultLayout",
+    x="1%",y="1%",
+    height=40,width=200,
+    layoutDir="BV",
+    flyOut=true,
+    message="Save DEFAULT Layout",
+  })  
+  asui.togglebox.save.default:setStyleSheet(asui.adjLabelstyle)
+  asui.togglebox.save.default:setClickCallback("asui.saveDefault")
+
+  asui.togglebox.save.combat = asui.togglebox.save:addChild({
+    name="saveCombatLayout",
+    x="1%",y="1%",
+    height=40,width=200,
+    layoutDir="BV",
+    flyOut=true,
+    message="Save COMBAT Layout"
+  }) 
+  asui.togglebox.save.combat:setStyleSheet(asui.adjLabelstyle)
+  asui.togglebox.save.combat:setClickCallback("asui.saveCombat")
+
+    
+  setFontSize("toggleDisp", asui.settings.toggleboxSize)
+  asui.togglebox.window:setTitle("Toggles","gray")
+  asui.togglebox.window:show()  
+  
+  if not table.contains(asui.modules, "Togglebox") then
+    table.insert(asui.modules, "Togglebox")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>showTogglebox</name>
+					<packageName></packageName>
+					<script>function asui.unTitle(str)
+    local buf = {}
+    for word in string.gmatch(str, "%S+") do          
+        local first, rest = string.sub(word, 1, 1), string.sub(word, 2)
+        table.insert(buf, string.lower(first) .. rest)
+    end  
+    return table.concat(buf, " ")
+end
+
+function asui.showTogglebox()
+
+  clearWindow("toggleDisp")
+  cecho("toggleDisp", "\n&lt;white&gt; -- Installed Modules --")
+  for i=1, #asui.modules, 1 do
+    if asui.modules[i] ~= "Togglebox" then
+      if asui[asui.unTitle(asui.modules[i])].window.hidden then
+        cechoLink("toggleDisp", "\n&lt;red&gt;OFF&lt;SteelBlue&gt; - "..asui.modules[i], [[asui.build]]..asui.modules[i]..[[();asui.showTogglebox()]], "Turn Off", true)
+      else
+        cechoLink("toggleDisp", "\n&lt;green&gt;ON &lt;SteelBlue&gt; - "..asui.modules[i], [[asui.]]..asui.unTitle(asui.modules[i])..[[.window.hidden="true";asui.]]..asui.unTitle(asui.modules[i])..[[.window:hide();asui.showTogglebox()]], "Turn On", true)
+      end
+    end
+  end    
+end
+registerAnonymousEventHandler("gmcp.Char.Vitals", "asui.showTogglebox")
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Togglebox Click Callbacks</name>
+					<packageName></packageName>
+					<script>function asui.styleSwap(style)
+  asui.useStyle = style
+  asui.restyle()
+end
+
+function asui.mapExplorer()
+  expandAlias("/explore-map")
+end
+
+function asui.closeAllWindows()
+  Adjustable.Container.hideAll()
+end
+
+function asui.loadDefault()
+  Adjustable.Container:loadAll("default")
+  asui.info("Loaded the default UI layout!")
+end
+
+function asui.loadCombat()
+  Adjustable.Container:loadAll("combat")
+end
+
+function asui.saveDefault()
+  Adjustable.Container:saveAll("default")
+  asui.info("Saved the default UI layout!")
+end
+
+function asui.saveCombat()
+  Adjustable.Container:saveAll("combat")
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Map</name>
+				<packageName></packageName>
+				<script>-- Build and populate map and location header.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildMap</name>
+					<packageName></packageName>
+					<script>function asui.buildMap()
+
+asui.map = {}
+
+-- A container to hold all map things.
+
+asui.map.window = Adjustable.Container:new({
+  name = "asui.map.window",
+  x = 0, y = 0,
+  width = "50%",
+  height = "50%",  
+  adjLabelstyle = asui.adjLabelstyle,
+  buttonstyle=[[
+    QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+    QLabel::hover{ background-color: rgba(160,160,160,50%);}
+   ]],
+  buttonFontSize = 10,
+  buttonsize = 15,  
+  },main)
+  
+  -- A label that we'll display our location data on.
+  
+ -- asui.locData =
+--  Geyser.Label:new({name = "asui.locData", x = 0, y = 0, height = -2, width = "100%"}, asui.map.window)
+
+-- The map.
+
+	asui.mapDisp = asui.mapDisp or Geyser.Mapper:new({
+		name = "asui.mapDisp",
+    x = 0, y = 0,
+    width = "100%",
+    height = "100%",
+	}, asui.map.window) 
+  setMapZoom(16)
+  asui.map.window:show()
+  
+if not table.contains(asui.modules, "Map") then
+    table.insert(asui.modules, "Map")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Chat</name>
+				<packageName></packageName>
+				<script>-- Tabbed chat capture.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildChat</name>
+					<packageName></packageName>
+					<script>--NTS - SET FONT TAB SIZE TO VARIABLE, SET FONT TO VARIABLE, SET COLORS TO VARIABLE.
+
+-- An EMCO for chat capture.
+
+function asui.buildChat()
+
+asui.chat = {}
+
+-- Define some things the EMCO needs to know.
+
+local EMCO = require("ASUI.emco")
+local stylesheet = [[background-color: rgb(0,180,0,255); border-width: 5px; border-style: inset; border-color: DarkSlateGrey]]
+local istylesheet = [[background-color: rgb(0,85,255,255); border-width: 5px; border-style: outset; border-color: DarkSlateGrey]]
+
+-- Create a container for the EMCO.
+
+asui.chat.window = Adjustable.Container:new({
+  name = "asui.chat.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Create the EMCO.
+
+asui.chatEMCO = EMCO:new({
+  x = "0",
+  y = "0",
+  width = "100%",
+  height = "100%",
+  tabFont = "BigNoodleTitling",
+  tabFontSize = 12,
+  font = "FixedSys",
+  fontSize = asui.chatSize,
+  activeTabFGColor = "gold",
+  inactiveTabFGColor = "GhostWhite",
+  allTab = true,
+  allTabName = "All",
+  blink = true,
+  blinkFromAll = false,
+  timeStamp = true,
+  autoWrap = true,
+  gap = 5,
+  consoleColor = "black",
+  consoles = {
+    "All",
+    "Chat",
+    "Local",
+    "Tells", 
+    "Shouts",
+    "Misc",
+  },
+  activeTabCSS = stylesheet,
+  inactiveTabCSS = istylesheet,
+}, asui.chat.window)
+asui.chat.window:show()
+
+  if not table.contains(asui.modules, "Chat") then
+    table.insert(asui.modules, "Chat")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>handleChat</name>
+					<packageName></packageName>
+					<script>-- This function displays chat in our chat EMCO.
+
+function asui.handleChat()
+  local channel = gmcp.Comm.Channel.channel
+  -- Where does the chat come from, where are we going to put it?
+  asui.tabbedchat = {}
+  asui.tabbedchat.locations =
+    {
+	["chat"] = "Chat",
+	["shout"] = "Shouts",
+	["gtell"] = "Tells",
+	["tell"] = "Tells",
+	["local"] = "Local",
+	["guild"] = "Shouts",
+  ["newbie"] = "Chat",
+  ["achievements"] = "Misc",
+  ["logins"] = "Misc"
+    }
+  -- Channels we don't need output can be ignored.
+  asui.tabbedchat.ignores = {}
+  -- Okay, output the chat then.
+  if asui.tabbedchat.ignores[channel] then
+    return false
+  end
+  local destination = "Misc"
+  for c, t in pairs(asui.tabbedchat.locations) do
+    if channel:find(c) then
+      destination = t
+      break
+    end
+  end
+  text = ansi2decho(gmcp.Comm.Channel.text) .. '\n'
+  asui.chatEMCO:decho(destination, text)
+end
+
+registerAnonymousEventHandler("gmcp.Comm.Channel", "asui.handleChat")</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Character</name>
+				<packageName></packageName>
+				<script>-- Miniconsole to show character information and stats.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildCharstat</name>
+					<packageName></packageName>
+					<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays character data and stats.
+
+function asui.buildCharstat()
+
+asui.charstat = {}
+
+-- First we build the container.
+
+asui.charstat.window = Adjustable.Container:new({
+  name = "asui.charstat.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.charstatDisp = Geyser.MiniConsole:new({
+  name="asui.charstatDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.charstatSize,
+}, asui.charstat.window)
+asui.charstat.window:show()
+
+  if not table.contains(asui.modules, "Charstat") then
+    table.insert(asui.modules, "Charstat")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>updateCharstat</name>
+					<packageName></packageName>
+					<script>-- NTS MAKE THIS EXIST.
+
+-- Formats and displays character information. On mouseover, displays stats.
+
+function asui.updateCharstat()
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Gauges</name>
+				<packageName></packageName>
+				<script>-- Standalone gauge windows.</script>
+				<eventHandlerList />
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Balance</name>
+					<packageName></packageName>
+					<script>-- Text gauge for balance tracking.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildBalance</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays if we're balanced or not.
+
+function asui.buildBalance()
+
+asui.balance = {}
+
+-- First we build the container.
+
+asui.balance.window = Adjustable.Container:new({
+  name = "asui.balance.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.balanceDisp = Geyser.MiniConsole:new({
+  name="asui.balanceDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = 8,
+}, asui.balance.window)
+asui.balance.window:show()
+
+  if not table.contains(asui.modules, "Balance") then
+    table.insert(asui.modules, "Balance")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateBalance</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Displays either a balanced indicator or a coutdown gauge until balance is returned.
+
+function asui.updateBalance()
+  
+-- Create a balance guage.
+
+local TextGauge = require("ASUI.textgauge")
+
+local balanceGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "blue_vilolet",
+    emptyCharacter = "-",
+    emptyColor = "gold",
+    }
+  )
+
+-- Fail check for missing gmcp.
+  
+if gmcp.Char.Balance == nil then return end
+  
+-- Good to go, populate the console.
+
+asui.balanceDisp:clear()
+  
+if gmcp.Char.Balance.balance ~= 0 then 
+    cecho("asui.balanceDisp", "&lt;DarkOrange&gt;Balance&lt;white&gt;: &lt;gold&gt;["..balanceGauge:setValue(gmcp.Char.Balance.balance, gmcp.Char.Balance.maxbalance).."&lt;gold&gt;]")
+    else
+    cecho("asui.balanceDisp", "&lt;DarkOrange&gt;Balance&lt;white&gt;: &lt;gold&gt;[&lt;green&gt;Balanced&lt;gold&gt;]")
+  end 
+end
+
+registerAnonymousEventHandler("gmcp.Char.Balance","asui.updateBalance")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Health</name>
+					<packageName></packageName>
+					<script>-- Text guage for health.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildHealthbar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays a text gauge for health.
+
+function asui.buildHealthbar()
+
+asui.healthbar = {}
+
+-- First we build the container.
+
+asui.healthbar.window = Adjustable.Container:new({
+  name = "asui.healthbar.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.healthbarDisp = Geyser.MiniConsole:new({
+  name="asui.healthbarDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = 8,
+}, asui.healthbar.window)
+asui.healthbar.window:show()
+
+  if not table.contains(asui.modules, "Healthbar") then
+    table.insert(asui.modules, "Healthbar")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateHealthbar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS
+
+-- Display, track and update health gauge as necessary.
+
+function asui.updateHealthbar()
+
+local TextGauge = require("ASUI.textgauge")
+
+local healthGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "red",
+    emptyCharacter = "-",
+    emptyColor = "white",
+    }
+  )
+  
+-- Fail check for missing gmcp.
+  
+if gmcp.Char.Vitals == nil then return end
+  
+-- Good to go, populate the console.
+
+asui.healthbarDisp:clear()
+
+cecho("asui.healthbarDisp", "&lt;firebrick&gt;Health&lt;white&gt;: &lt;gold&gt;["..healthGauge:setValue(gmcp.Char.Vitals.hp, gmcp.Char.Vitals.maxhp).."&lt;gold&gt;]")
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Vitals","asui.updateHealthbar")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Mana</name>
+					<packageName></packageName>
+					<script>-- Text gauge for mana.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildManabar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays a text gauge for health.
+
+function asui.buildManabar()
+
+asui.manabar = {}
+
+-- First we build the container.
+
+asui.manabar.window = Adjustable.Container:new({
+  name = "asui.manabar.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.manabarDisp = Geyser.MiniConsole:new({
+  name="asui.manabarDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = 8,
+}, asui.manabar.window)
+asui.manabar.window:show()
+
+  if not table.contains(asui.modules, "Manabar") then
+    table.insert(asui.modules, "Manabar")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateManabar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS
+
+-- Display, track and update mana gauge as necessary.
+
+function asui.updateManabar()
+
+local TextGauge = require("ASUI.textgauge")
+
+local manaGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "dodger_blue",
+    emptyCharacter = "-",
+    emptyColor = "white",
+    }
+  )
+  
+-- Fail check for missing gmcp.
+  
+if gmcp.Char.Vitals == nil then return end
+  
+-- Good to go, populate the console.
+
+asui.manabarDisp:clear()
+
+cecho("asui.manabarDisp", "&lt;DeepSkyBlue&gt;Mana&lt;white&gt;: &lt;gold&gt;["..manaGauge:setValue(gmcp.Char.Vitals.mp, gmcp.Char.Vitals.maxmp).."&lt;gold&gt;]")
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Vitals","asui.updateManabar")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>SitRep</name>
+				<packageName></packageName>
+				<script>-- A console that displays things that have recently happened. Gold gain, health/mana changes, etc.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildSitrep</name>
+					<packageName></packageName>
+					<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays various things that have happened.
+
+function asui.buildSitrep()
+
+asui.sitrep = {}
+
+-- First we build the container.
+
+asui.sitrep.window = Adjustable.Container:new({
+  name = "asui.sitrep.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.sitrepDisp = Geyser.MiniConsole:new({
+  name="asui.sitrepDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.sitrepSize,
+}, asui.sitrep.window)
+asui.sitrep.window:show()
+
+  if not table.contains(asui.modules, "Sitrep") then
+    table.insert(asui.modules, "Sitrep")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>updateSitrep</name>
+					<packageName></packageName>
+					<script>-- NTS MAKE THIS EXIST
+
+-- When a specific event happens, output the event to our console.
+
+function asui.updateSitrep(event)
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Room</name>
+				<packageName></packageName>
+				<script>-- An infobox of useful information about the room you're in.
+
+-- Subgroups for room contents.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildRoom</name>
+					<packageName></packageName>
+					<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays room data.
+
+function asui.buildRoom()
+
+asui.room = {}
+
+-- First build a container for the console.
+
+asui.room.window = Adjustable.Container:new({
+  name = "asui.room.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.roomDisp = Geyser.MiniConsole:new({
+  name="asui.roomDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.roomSize,
+}, asui.room.window)
+asui.room.window:show()
+
+  if not table.contains(asui.modules, "Room") then
+    table.insert(asui.modules, "Room")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>updateRoom</name>
+					<packageName></packageName>
+					<script>-- Updates our locData label whenever we move. Also gives data for the separate room info box.
+
+function asui.updateRoom()
+  local room = gmcp.Room.Info
+  local roomExits = {}
+  local roomInfo = room.name .. " - " .. room.area
+  asui.exitString = ""
+  for k, v in pairs(room.exits) do
+    table.insert(roomExits, k)
+  end
+  asui.exitString = table.concat(roomExits, ", ")
+  local color = "DeepSkyBlue"
+  --[==[asui.locData:echo(
+    [[&lt;p style="font-size:10px;"&gt;&lt;font color="]] .. color .. [["&gt;&lt;b&gt;|[v&lt;font color="LightYellow"&gt;]] ..
+    room.num ..
+    [[&lt;font color="]] .. color .. [["&gt;]|[&lt;font color="LightYellow"&gt;]] ..
+    roomInfo ..
+    [[&lt;font color="]] .. color .. [["&gt;]|&lt;/b&gt;]]
+  )--]==]
+end
+
+registerAnonymousEventHandler("gmcp.Room.Info", "asui.updateRoom")</script>
+					<eventHandlerList />
+				</Script>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Players</name>
+					<packageName></packageName>
+					<script>-- Which players are in the room with us.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildRoomPlayers</name>
+						<packageName></packageName>
+						<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays who's in the room with us.
+
+function asui.buildRoomplayers()
+
+asui.roomplayers = {}
+
+-- First build a container for the console.
+
+asui.roomplayers.window = Adjustable.Container:new({
+  name = "asui.roomplayers.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.roomplayersDisp = Geyser.MiniConsole:new({
+  name="asui.roomPlayersDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.roomplayersSize,
+}, asui.roomplayers.window)
+asui.roomplayers.window:show()
+
+  if not table.contains(asui.modules, "Roomplayers") then
+    table.insert(asui.modules, "Roomplayers")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateRoomPlayers</name>
+						<packageName></packageName>
+						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
+
+function updateRoomPlayers()
+end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Denizens</name>
+					<packageName></packageName>
+					<script>-- Which mobs are in the room with us.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildRoomDenizens</name>
+						<packageName></packageName>
+						<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays mobs in the room with us.
+
+function asui.buildRoomdenizens()
+
+asui.roomdenizens = {}
+
+-- First build a container for the console.
+
+asui.roomdenizens.window = Adjustable.Container:new({
+  name = "asui.roomdenizens.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.roomdenizensDisp = Geyser.MiniConsole:new({
+  name="asui.roomDenizensDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.roomdenizensSize,
+}, asui.roomdenizens.window)
+asui.roomdenizens.window:show()
+
+  if not table.contains(asui.modules, "Roomdenizens") then
+    table.insert(asui.modules, "Roomdenizens")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateRoomDenizens</name>
+						<packageName></packageName>
+						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
+
+function updateRoomDenizens()
+end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Items</name>
+					<packageName></packageName>
+					<script>-- What items are in the room with us.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildRoomItems</name>
+						<packageName></packageName>
+						<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays items in the room with us.
+
+function asui.buildRoomitems()
+
+asui.roomitems = {}
+
+-- First build a container for the console.
+
+asui.roomitems.window = Adjustable.Container:new({
+  name = "asui.roomitems.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.roomItemsDisp = Geyser.MiniConsole:new({
+  name="asui.roomItemsDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.roomplayersSize,
+}, asui.roomitems.window)
+asui.roomitems.window:show()
+
+  if not table.contains(asui.modules, "Roomitems") then
+    table.insert(asui.modules, "Roomitems")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateRoomItems</name>
+						<packageName></packageName>
+						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
+
+function updateRoomItems()
+end</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Prompt</name>
+				<packageName></packageName>
+				<script>-- Movable prompt! When enabled, gags prompt from game.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildPrompt</name>
+					<packageName></packageName>
+					<script>-- NTS - CHANGE FONT TO VARIABLE.
+
+function asui.buildPrompt()
+
+asui.prompt = {}
+asui.settings.promptSize = asui.settings.promptSize or 9
+  
+  --Create the prompt Adjustable
+  asui.prompt.window = Adjustable.Container:new({
+    name = "asui.prompt.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",        
+    adjLabelstyle = asui.adjLabelstyle,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,
+  },main)
+
+  --Create the prompt Console
+  asui.promptDisp = Geyser.MiniConsole:new({
+    name = "asui.promptDisp",
+    x = 0, y = 0,
+    autoWrap = true,
+    width = "100%",
+    height = "100%",
+    color="black",
+    font = "FixedSys",
+    fontSize = asui.settings.promptSize,
+  },asui.prompt.window) 
+ 
+  asui.prompt.window:setTitle("Prompt","gray")
+  asui.settings.usePrompt = true
+  asui.prompt.window:show()  
+  
+  if not table.contains(asui.modules, "Prompt") then
+    table.insert(asui.modules, "Prompt")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Defence</name>
+				<packageName></packageName>
+				<script></script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildDefence</name>
+					<packageName></packageName>
+					<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays defence data.
+
+function asui.buildDefence()
+
+asui.defence = {}
+
+-- First build a container for the console.
+
+asui.defence.window = Adjustable.Container:new({
+  name = "asui.defence.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.defenceDisp = Geyser.MiniConsole:new({
+  name="asui.defenceDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.defenceSize,
+}, asui.defence.window)
+asui.defence.window:show()
+
+  if not table.contains(asui.modules, "Defence") then
+    table.insert(asui.modules, "Defence")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>updateDefence</name>
+					<packageName></packageName>
+					<script>-- NTS MAKE THIS EXIST.
+
+-- When defences are gained or lost, update the display.
+
+function asui.updateDefence()
+end</script>
+					<eventHandlerList />
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Afflictions</name>
+				<packageName></packageName>
+				<script>-- Display for afflictions currently effecting us.</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>buildAffliction</name>
+					<packageName></packageName>
+					<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays affliction data.
+
+function asui.buildAffliction()
+
+asui.affliction = {}
+
+-- First build a container for the console.
+
+asui.affliction.window = Adjustable.Container:new({
+  name = "asui.affliction.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.afflictionDisp = Geyser.MiniConsole:new({
+  name="asui.afflictionDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.afflictionSize,
+}, asui.affliction.window)
+asui.affliction.window:show()
+
+  if not table.contains(asui.modules, "Affliction") then
+    table.insert(asui.modules, "Affliction")
+  end
+end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>updateAffliction</name>
+					<packageName></packageName>
+					<script>-- NTS MAKE THIS EXIST.
+
+-- When afflictions are gained or lost, update the display.
+
+function asui.updateAffliction()
+end</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
