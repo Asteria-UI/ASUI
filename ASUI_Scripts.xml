@@ -52,6 +52,20 @@ asui.styles = asui.styles or {
     ["golddouble"] = "background-color:rgba(0,0,0,50%); border: 5px double gold;",
 }
 
+asui.bordercolors = asui.bordercolors or {
+    ["greygroove"] = "grey",
+    ["greengroove"] = "green",
+    
+    ["dimgreyinset"] = "dimgray",
+    ["greyinset"] = "grey;",
+    ["greeninset"] = "green",
+    ["chaosinset"] = "purple",
+
+    ["greydouble"] = "grey",
+    ["greendouble"] = "green",    
+    ["golddouble"] = "gold",
+}
+
 asui.debug = false
 asui.trueTime = 0
 
@@ -91,9 +105,9 @@ asui.settings = asui.settings or {
   promptSize = 9,
   defenceSize = 9,
   afflictionSize = 9,
-  roomDenizensSize = 9,
-  roomItemsSize = 9,
-  roomPlayersSize = 9,
+  roomdenizensSize = 9,
+  roomitemsSize = 9,
+  roomplayersSize = 9,
   roomSize = 9,
   toggleSize = 9,
   usePrompt = usePrompt or false,
@@ -130,6 +144,8 @@ asui.settings = asui.settings or {
   if not table.contains(asui.modules, "Charstat") then table.insert(asui.modules, "Charstat") end
   if not table.contains(asui.modules, "Healthbar") then table.insert(asui.modules, "Healthbar") end
   if not table.contains(asui.modules, "Manabar") then table.insert(asui.modules, "Manabar") end
+  if not table.contains(asui.modules, "Expbar") then table.insert(asui.modules, "Expbar") end
+  if not table.contains(asui.modules, "Capacity") then table.insert(asui.modules, "Capacity") end
   if not table.contains(asui.modules, "Togglebox") then table.insert(asui.modules, "Togglebox") end
     
     for i=1, #asui.modules, 1 do
@@ -169,6 +185,20 @@ function asui.restyle()
     ["greendouble"] = "background-color:rgba(0,0,0,50%); border: 5px double green;",    
     ["golddouble"] = "background-color:rgba(0,0,0,50%); border: 5px double gold;",
   }
+  
+  asui.bordercolors = asui.bordercolors or {
+    ["greygroove"] = "grey",
+    ["greengroove"] = "green",
+    
+    ["dimgreyinset"] = "dimgray",
+    ["greyinset"] = "grey;",
+    ["greeninset"] = "green",
+    ["chaosinset"] = "purple",
+
+    ["greydouble"] = "grey",
+    ["greendouble"] = "green",    
+    ["golddouble"] = "gold",
+    }
 --------------------------------------------------------------------
 -- Which Style To Start With?  
   if not asui.useStyle then asui.useStyle = "dimgreyinset" end
@@ -188,6 +218,24 @@ function asui.restyle()
 end</script>
 					<eventHandlerList />
 				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>resizeEvent</name>
+					<packageName></packageName>
+					<script>function resizeEvent(_, name)
+
+asui.resize = asui.resize or {
+ignores = {"Map", "Chat", "Togglebox"},
+}
+ for _, value in pairs(asui.modules) do
+    if name:find(value:lower()) and not table.contains(asui.resize.ignores, value) then
+      registerNamedTimer("ASUI", "resize debounce", 0.1, [[asui.update]]..value..[[()]])
+    end
+  end
+end</script>
+					<eventHandlerList>
+						<string>AdjustableContainerReposition</string>
+					</eventHandlerList>
+				</Script>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>Toggle Box</name>
@@ -202,7 +250,7 @@ end</script>
 -- Miniconsole that displays various clickable toggles to enable or disable UI elements and change styles.
 
 function asui.buildTogglebox()
-  asui.settings.toggleboxSize = asui.settings.toggleboxSize or 9
+  asui.settings.toggleSize = asui.settings.toggleSize or 9
   asui.togglebox = {}
 
   --Create the main Adjustable
@@ -347,7 +395,7 @@ end</script>
 					<eventHandlerList />
 				</Script>
 				<Script isActive="yes" isFolder="no">
-					<name>showTogglebox</name>
+					<name>updateTogglebox</name>
 					<packageName></packageName>
 					<script>function asui.unTitle(str)
     local buf = {}
@@ -358,21 +406,21 @@ end</script>
     return table.concat(buf, " ")
 end
 
-function asui.showTogglebox()
+function asui.updateTogglebox()
 
   clearWindow("toggleDisp")
   cecho("toggleDisp", "\n&lt;white&gt; -- Installed Modules --")
   for i=1, #asui.modules, 1 do
     if asui.modules[i] ~= "Togglebox" then
       if asui[asui.unTitle(asui.modules[i])].window.hidden then
-        cechoLink("toggleDisp", "\n&lt;red&gt;OFF&lt;SteelBlue&gt; - "..asui.modules[i], [[asui.build]]..asui.modules[i]..[[();asui.showTogglebox()]], "Turn Off", true)
+        cechoLink("toggleDisp", "\n&lt;red&gt;OFF&lt;SteelBlue&gt; - "..asui.modules[i], [[asui.build]]..asui.modules[i]..[[();asui.updateTogglebox()]], "Turn Off", true)
       else
-        cechoLink("toggleDisp", "\n&lt;green&gt;ON &lt;SteelBlue&gt; - "..asui.modules[i], [[asui.]]..asui.unTitle(asui.modules[i])..[[.window.hidden="true";asui.]]..asui.unTitle(asui.modules[i])..[[.window:hide();asui.showTogglebox()]], "Turn On", true)
+        cechoLink("toggleDisp", "\n&lt;green&gt;ON &lt;SteelBlue&gt; - "..asui.modules[i], [[asui.]]..asui.unTitle(asui.modules[i])..[[.window.hidden="true";asui.]]..asui.unTitle(asui.modules[i])..[[.window:hide();asui.updateTogglebox()]], "Turn On", true)
       end
     end
   end    
 end
-registerAnonymousEventHandler("gmcp.Char.Vitals", "asui.showTogglebox")
+registerAnonymousEventHandler("gmcp.Char.Vitals", "asui.updateTogglebox")
 </script>
 					<eventHandlerList />
 				</Script>
@@ -481,9 +529,18 @@ asui.chat = {}
 
 -- Define some things the EMCO needs to know.
 
+function asui.findBorder()
+for k,v in pairs(asui.styles) do
+  if asui.useStyle == k then
+     local bordercolor = asui.bordercolors[k]
+     return bordercolor
+    end
+  end
+end
+
 local EMCO = require("ASUI.emco")
-local stylesheet = [[background-color: rgb(0,180,0,255); border-width: 5px; border-style: inset; border-color: DarkSlateGrey]]
-local istylesheet = [[background-color: rgb(0,85,255,255); border-width: 5px; border-style: outset; border-color: DarkSlateGrey]]
+local stylesheet = [[background-color: rgb(0,180,0,255); border-width: 5px; border-style: inset; border-color: ]]..asui.findBorder()..[[]]
+local istylesheet = [[background-color: rgb(0,85,255,255); border-width: 5px; border-style: outset; border-color: ]]..asui.findBorder()..[[]]
 
 -- Create a container for the EMCO.
 
@@ -513,7 +570,7 @@ asui.chatEMCO = EMCO:new({
   tabFont = "BigNoodleTitling",
   tabFontSize = 12,
   font = "FixedSys",
-  fontSize = asui.chatSize,
+  fontSize = asui.settings.chatSize,
   activeTabFGColor = "gold",
   inactiveTabFGColor = "GhostWhite",
   allTab = true,
@@ -627,6 +684,7 @@ asui.charstatDisp = Geyser.MiniConsole:new({
   width="100%", height="100%",
   color = "black",
   scrollBar = false,
+  autoWrap = true,
   font = "FixedSys",
   fontSize = asui.settings.charstatSize,
 }, asui.charstat.window)
@@ -646,7 +704,21 @@ end</script>
 -- Formats and displays character information. On mouseover, displays stats.
 
 function asui.updateCharstat()
-end</script>
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.charstatDisp.wrapAt
+local name = gmcp.Char.Base.name
+
+-- Check if GMCP even exists.
+
+ if gmcp.Char == nil then return end
+ 
+ -- We have data, let's display it.
+asui.charstatDisp:clear()
+cecho("asui.charstatDisp",fText.fText("Data For "..name, {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Char.Base","asui.updateCharstat")</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
@@ -724,7 +796,7 @@ local TextGauge = require("ASUI.textgauge")
 local balanceGauge = TextGauge:new(
   {
     fillCharacter = ":",
-    fillColor = "blue_vilolet",
+    fillColor = "blue_violet",
     emptyCharacter = "-",
     emptyColor = "gold",
     }
@@ -746,6 +818,97 @@ if gmcp.Char.Balance.balance ~= 0 then
 end
 
 registerAnonymousEventHandler("gmcp.Char.Balance","asui.updateBalance")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Experience</name>
+					<packageName></packageName>
+					<script>-- Text gauge for experience tracking.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildExpbar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays experience to next level.
+
+function asui.buildExpbar()
+
+asui.expbar = {}
+
+-- First we build the container.
+
+asui.expbar.window = Adjustable.Container:new({
+  name = "asui.expbar.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.expbarDisp = Geyser.MiniConsole:new({
+  name="asui.expbarDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = 8,
+}, asui.expbar.window)
+asui.expbar.window:show()
+
+  if not table.contains(asui.modules, "Expbar") then
+    table.insert(asui.modules, "Expbar")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateExpbar</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Displays text gauge for experience progress to next level.
+
+function asui.updateExpbar()
+  
+-- Create an experience guage.
+
+local TextGauge = require("ASUI.textgauge")
+
+local expGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "blue_violet",
+    emptyCharacter = "-",
+    emptyColor = "white",
+    }
+  )
+
+-- Fail check for missing gmcp.
+  
+if gmcp.Char.Worth == nil then return end
+  
+-- Good to go, populate the console.
+
+asui.expbarDisp:clear()
+  
+cecho("asui.expbarDisp", "&lt;cyan&gt;Exp&lt;white&gt;: "..expGauge:setValue(gmcp.Char.Worth.xp, gmcp.Char.Worth.tnl))
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Worth","asui.updateExpbar")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -927,6 +1090,99 @@ registerAnonymousEventHandler("gmcp.Char.Vitals","asui.updateManabar")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>Capacity</name>
+					<packageName></packageName>
+					<script>-- Text gauge for capacity tracking.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildCapacity</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Miniconsole that displays how much you're currently carrying.
+
+function asui.buildCapacity()
+
+asui.capacity = {}
+
+-- First we build the container.
+
+asui.capacity.window = Adjustable.Container:new({
+  name = "asui.capacity.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.capacityDisp = Geyser.MiniConsole:new({
+  name="asui.capacityDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = 8,
+}, asui.capacity.window)
+asui.capacity.window:show()
+
+  if not table.contains(asui.modules, "Capacity") then
+    table.insert(asui.modules, "Capacity")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateCapacity</name>
+						<packageName></packageName>
+						<script>-- NTS ADD VARIABLES TO THIS.
+
+-- Displays text gauge showing how much you're carrying.
+
+function asui.updateCapacity()
+  
+-- Create a capacity guage.
+
+local TextGauge = require("ASUI.textgauge")
+
+local capacityGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "cadet_blue",
+    emptyCharacter = "-",
+    emptyColor = "white",
+    }
+  )
+
+-- Fail check for missing gmcp.
+  
+if gmcp.Char.Worth == nil then return end
+  
+-- Good to go, populate the console.
+
+asui.capacityDisp:clear()
+
+local cap = gmcp.Char.Worth.capacity
+local carry = gmcp.Char.Worth.carry
+cecho("asui.capacityDisp", "&lt;SkyBlue&gt;Capacity&lt;white&gt;: "..capacityGauge:setValue(carry, cap).."&lt;LightSkyBlue&gt; "..carry.."/"..cap)
+
+end
+
+registerAnonymousEventHandler("gmcp.Char.Worth","asui.updateCapacity")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
 				<name>SitRep</name>
@@ -969,6 +1225,7 @@ asui.sitrepDisp = Geyser.MiniConsole:new({
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.sitrepSize,
@@ -988,8 +1245,21 @@ end</script>
 
 -- When a specific event happens, output the event to our console.
 
-function asui.updateSitrep(event)
-end</script>
+function asui.updateSitrep()
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.sitrepDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Char == nil then return end
+ 
+ -- We have data, let's display it.
+asui.sitrepDisp:clear()
+cecho("asui.sitrepDisp",fText.fText("Recent Events", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Char.Base","asui.updateSitrep")</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
@@ -1036,6 +1306,7 @@ asui.roomDisp = Geyser.MiniConsole:new({
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.roomSize,
@@ -1062,14 +1333,16 @@ function asui.updateRoom()
     table.insert(roomExits, k)
   end
   asui.exitString = table.concat(roomExits, ", ")
-  local color = "DeepSkyBlue"
-  --[==[asui.locData:echo(
-    [[&lt;p style="font-size:10px;"&gt;&lt;font color="]] .. color .. [["&gt;&lt;b&gt;|[v&lt;font color="LightYellow"&gt;]] ..
-    room.num ..
-    [[&lt;font color="]] .. color .. [["&gt;]|[&lt;font color="LightYellow"&gt;]] ..
-    roomInfo ..
-    [[&lt;font color="]] .. color .. [["&gt;]|&lt;/b&gt;]]
-  )--]==]
+  local fText = require("ASUI.ftext")
+  local conWidth = asui.roomDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Room == nil then return end
+ 
+ -- We have data, let's display it.
+asui.roomDisp:clear()
+cecho("asui.roomDisp",fText.fText("Room Information", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
 end
 
 registerAnonymousEventHandler("gmcp.Room.Info", "asui.updateRoom")</script>
@@ -1112,10 +1385,11 @@ asui.roomplayers.window = Adjustable.Container:new({
 -- Then build the console.
 
 asui.roomplayersDisp = Geyser.MiniConsole:new({
-  name="asui.roomPlayersDisp",
+  name="asui.roomplayersDisp",
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.roomplayersSize,
@@ -1133,8 +1407,20 @@ end</script>
 						<packageName></packageName>
 						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
 
-function updateRoomPlayers()
-end</script>
+function asui.updateRoomplayers()
+local fText = require("ASUI.ftext")
+local conWidth = asui.roomplayersDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+-- if gmcp.Room.Chars == nil then return end
+ 
+ -- We have data, let's display it.
+asui.roomplayersDisp:clear()
+cecho("asui.roomplayersDisp",fText.fText("Players", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Room.Chars", "asui.updateRoomplayers")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -1175,10 +1461,11 @@ asui.roomdenizens.window = Adjustable.Container:new({
 -- Then build the console.
 
 asui.roomdenizensDisp = Geyser.MiniConsole:new({
-  name="asui.roomDenizensDisp",
+  name="asui.roomdenizensDisp",
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.roomdenizensSize,
@@ -1196,8 +1483,21 @@ end</script>
 						<packageName></packageName>
 						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
 
-function updateRoomDenizens()
-end</script>
+function asui.updateRoomdenizens()
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.roomdenizensDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Char == nil then return end
+ 
+ -- We have data, let's display it.
+asui.roomdenizensDisp:clear()
+cecho("asui.roomdenizensDisp",fText.fText("Denizens", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Room.Char", "asui.updateRoomdenizens")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -1237,11 +1537,12 @@ asui.roomitems.window = Adjustable.Container:new({
 
 -- Then build the console.
 
-asui.roomItemsDisp = Geyser.MiniConsole:new({
-  name="asui.roomItemsDisp",
+asui.roomitemsDisp = Geyser.MiniConsole:new({
+  name="asui.roomitemsDisp",
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.roomplayersSize,
@@ -1259,8 +1560,21 @@ end</script>
 						<packageName></packageName>
 						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
 
-function updateRoomItems()
-end</script>
+function asui.updateRoomitems()
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.roomitemsDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Room == nil then return end
+ 
+ -- We have data, let's display it.
+asui.roomitemsDisp:clear()
+cecho("asui.roomitemsDisp",fText.fText("Items", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+cecho("asui.roomitemsDisp", "\n\n12345| Test item.\n")end
+
+registerAnonymousEventHandler("gmcp.Room.Items", "asui.updateRoomitems")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -1359,6 +1673,7 @@ asui.defenceDisp = Geyser.MiniConsole:new({
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.defenceSize,
@@ -1379,7 +1694,20 @@ end</script>
 -- When defences are gained or lost, update the display.
 
 function asui.updateDefence()
-end</script>
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.defenceDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Char == nil then return end
+ 
+ -- We have data, let's display it.
+asui.defenceDisp:clear()
+cecho("asui.defenceDisp",fText.fText("Defences", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Char", "asui.updateDefence")</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
@@ -1424,6 +1752,7 @@ asui.afflictionDisp = Geyser.MiniConsole:new({
   x = 0, y = 0,
   width="100%", height="100%",
   color = "black",
+  autoWrap = true,
   scrollBar = false,
   font = "FixedSys",
   fontSize = asui.settings.afflictionSize,
@@ -1444,7 +1773,20 @@ end</script>
 -- When afflictions are gained or lost, update the display.
 
 function asui.updateAffliction()
-end</script>
+
+local fText = require("ASUI.ftext")
+local conWidth = asui.afflictionDisp.wrapAt
+
+-- Check if GMCP even exists.
+
+ if gmcp.Char == nil then return end
+ 
+ -- We have data, let's display it.
+asui.afflictionDisp:clear()
+cecho("asui.afflictionDisp",fText.fText("Afflictions", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+end
+
+registerAnonymousEventHandler("gmcp.Char", "asui.updateAffliction")</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
