@@ -108,10 +108,45 @@ asui.settings = asui.settings or {
   roomdenizensSize = 9,
   roomitemsSize = 9,
   roomplayersSize = 9,
+  roomdenizensanditemsSize = 9,
   roomSize = 9,
   toggleSize = 9,
   usePrompt = usePrompt or false,
   }
+  
+asui.settings.colors = asui.settings.colors or {
+exp = "OrangeRed",
+emphasis = "light_goldenrod",
+divider = "white",
+header = "DeepSkyBlue",
+highhp = "DarkGreen",
+midhp = "yellow",
+lowhp = "red",
+highmp = "DarkGreen",
+midmp = "yellow",
+lowmp = "red",
+gold = "yellow",
+worn = "green",
+tab = "DimGray",
+guild = "cyan",
+rank = "white",
+carry = "LightSkyBlue",
+players = "cyan",
+legends = "yellow",
+hostiles = "red",
+innocents = "LightSkyBlue",
+peacefuls = "cyan",
+activetab = "DarkGreen",
+inactivetab = "bisque",
+inactivetoggle = "Black",
+activetoggle = "DimGrey",
+offborder = "white",
+onborder = "LimeGreen",
+lowcount = "DarkOrange",
+highcount = "cyan",
+defense = "green",
+affliction = "red"
+}
   
 -- DEFAULT STYLE  
 --------------------------------------------------------------------
@@ -141,6 +176,7 @@ asui.settings = asui.settings or {
   if not table.contains(asui.modules, "Roomplayers") then table.insert(asui.modules, "Roomplayers") end
   if not table.contains(asui.modules, "Roomdenizens") then table.insert(asui.modules, "Roomdenizens") end
   if not table.contains(asui.modules, "Roomitems") then table.insert(asui.modules, "Roomitems") end
+  if not table.contains(asui.modules, "Roomdenizensanditems") then table.insert(asui.modules, "Roomdenizensanditems") end
   if not table.contains(asui.modules, "Charstat") then table.insert(asui.modules, "Charstat") end
   if not table.contains(asui.modules, "Healthbar") then table.insert(asui.modules, "Healthbar") end
   if not table.contains(asui.modules, "Manabar") then table.insert(asui.modules, "Manabar") end
@@ -224,7 +260,7 @@ end</script>
 					<script>function resizeEvent(_, name)
 
 asui.resize = asui.resize or {
-ignores = {"Map", "Chat", "Togglebox"},
+ignores = {"Map", "Chat", "Togglebox", "Prompt"},
 }
  for _, value in pairs(asui.modules) do
     if name:find(value:lower()) and not table.contains(asui.resize.ignores, value) then
@@ -235,6 +271,18 @@ end</script>
 					<eventHandlerList>
 						<string>AdjustableContainerReposition</string>
 					</eventHandlerList>
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Pretty Numbers</name>
+					<packageName></packageName>
+					<script>function addNumberSeperator(v)
+  local s = string.format("%d", math.floor(v))
+    local pos = string.len(s) % 3
+    if pos == 0 then pos = 3 end
+    return string.sub(s, 1, pos)
+    .. string.gsub(string.sub(s, pos+1), "(...)", ",%1")
+end</script>
+					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
 			<ScriptGroup isActive="yes" isFolder="yes">
@@ -384,7 +432,7 @@ function asui.buildTogglebox()
   asui.togglebox.save.combat:setClickCallback("asui.saveCombat")
 
     
-  setFontSize("toggleDisp", asui.settings.toggleboxSize)
+  setFontSize("toggleDisp", asui.settings.toggleSize)
   asui.togglebox.window:setTitle("Toggles","gray")
   asui.togglebox.window:show()  
   
@@ -689,6 +737,7 @@ asui.charstatDisp = Geyser.MiniConsole:new({
   fontSize = asui.settings.charstatSize,
 }, asui.charstat.window)
 asui.charstat.window:show()
+asui.buildStatswitch()
 
   if not table.contains(asui.modules, "Charstat") then
     table.insert(asui.modules, "Charstat")
@@ -699,26 +748,137 @@ end</script>
 				<Script isActive="yes" isFolder="no">
 					<name>updateCharstat</name>
 					<packageName></packageName>
-					<script>-- NTS MAKE THIS EXIST.
+					<script>-- NTS NEEDS GMCP UPDATES.
 
--- Formats and displays character information. On mouseover, displays stats.
+-- Formats and displays character information.
 
 function asui.updateCharstat()
 
-local fText = require("ASUI.ftext")
-local conWidth = asui.charstatDisp.wrapAt
-local name = gmcp.Char.Base.name
-
 -- Check if GMCP even exists.
 
- if gmcp.Char == nil then return end
+ if gmcp.Char.Base == nil then return end
+
+-- GMCP exists, define some locals.
+
+local fText = require("ASUI.ftext")
+local TextGauge = require("ASUI.textgauge")
+local conWidth = asui.charstatDisp.wrapAt
+local name = gmcp.Char.Base.fullname
+local cap = gmcp.Char.Worth.capacity
+local carry = gmcp.Char.Worth.carry
+local lvl = gmcp.Char.Worth.level
+local exp = gmcp.Char.Worth.xp
+local tnl = gmcp.Char.Worth.tnl
+local mail = gmcp.Char.Worth.unreadmail
+local gold = tonumber(gmcp.Char.Worth.gold)
+local prettygold = addNumberSeperator(gold)
+local bank = tonumber(gmcp.Char.Worth.bank)
+local totalgold = addNumberSeperator(gold+bank)
+local hdr = asui.settings.colors.header
+local emp = asui.settings.colors.emphasis
+local div = asui.settings.colors.divider
+local gpc = asui.settings.colors.gold
+local spc = asui.settings.colors.exp
+local glc = asui.settings.colors.guild
+local rnk = asui.settings.colors.rank
+local cac = asui.settings.colors.carry
+
+local expGauge = TextGauge:new(
+  {
+    fillCharacter = ":",
+    fillColor = "blue_violet",
+    emptyCharacter = "-",
+    emptyColor = "white",
+    }
+  )
  
  -- We have data, let's display it.
+ 
 asui.charstatDisp:clear()
-cecho("asui.charstatDisp",fText.fText("Data For "..name, {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+cecho("asui.charstatDisp",fText.fText(""..name.."", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;"..hdr.."&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.charstatDisp", "\n\n")
+cecho("asui.charstatDisp", string.format("&lt;"..emp.."&gt;   Guild&lt;"..div.."&gt;: &lt;"..glc.."&gt;Placeholder &lt;"..div.."&gt;(Rank:&lt;"..rnk.."&gt; #)\n&lt;"..emp.."&gt;   Level&lt;"..div.."&gt;: %s (%s)\n&lt;"..emp.."&gt;    Gold&lt;"..div.."&gt;:&lt;"..gpc.."&gt; %s &lt;"..div.."&gt;(Total: &lt;"..gpc.."&gt;%s&lt;"..div.."&gt;)\n&lt;"..emp.."&gt;    Mail&lt;"..div.."&gt;:&lt;white&gt; %s\n&lt;"..emp.."&gt;Capacity&lt;"..div.."&gt;: &lt;"..cac.."&gt;%s&lt;"..div.."&gt;/&lt;"..cac.."&gt;%s",
+     --gmcp.Char.Base.guild,
+     --gmcp.Char.Base.rank,
+       lvl,
+       expGauge:setValue(exp, tnl),
+       prettygold,
+       totalgold,
+       mail,
+       carry,
+       cap
+      )
+    )
 end
 
-registerAnonymousEventHandler("gmcp.Char.Base","asui.updateCharstat")</script>
+registerAnonymousEventHandler("gmcp.Char.Base","asui.updateCharstat")
+registerAnonymousEventHandler("gmcp.Char.Worth", "asui.updateCharstat")</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>statSwitch</name>
+					<packageName></packageName>
+					<script>-- An invisible label that sits over the character window and tells it to display stats on mouseover.
+
+function asui.buildStatswitch()
+asui.statSwitch = Geyser.Label:new({
+  name = "asui.statSwitch",
+  x = 0, y = 0,
+  width = "100%", height = "100%",
+  }, asui.charstat.window)
+  
+ asui.statSwitch:setStyleSheet([[
+  background-color: rgba(0,0,0,0%);
+  ]])
+ setLabelOnEnter("asui.statSwitch", "asui.statSwitchMO")
+ setLabelOnLeave("asui.statSwitch", "asui.updateCharstat")
+ end</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>statSwitchMO</name>
+					<packageName></packageName>
+					<script>-- NTS DYNAMIC SPACING
+
+-- A function that displays stats when you mouseover the character window.
+
+function asui.statSwitchMO()
+
+-- If GMCP doesn't exist, do nothing
+
+-- add this
+
+-- GMCP exists, define some locals.
+
+local fText = require("ASUI.ftext")
+local TextGauge = require("ASUI.textgauge")
+local conWidth = asui.charstatDisp.wrapAt
+local name = gmcp.Char.Base.name
+local hdr = asui.settings.colors.header
+local emp = asui.settings.colors.emphasis
+local div = asui.settings.colors.divider
+
+-- Display stat info.
+
+
+asui.charstatDisp:clear()
+cecho("asui.charstatDisp",fText.fText("&lt;"..hdr.."&gt;"..name.."'s Stats", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;"..hdr.."&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.charstatDisp", "\n\n")
+cecho("asui.charstatDisp", string.format("&lt;"..emp.."&gt;      Strength&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;   Agility&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;     Vitality&lt;"..div.."&gt;: %s\n&lt;"..emp.."&gt;     Intellect&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;     Speed&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;       Spirit&lt;"..div.."&gt;: %s\n\n&lt;"..emp.."&gt;       Evasion&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;  Critical&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;        Armor&lt;"..div.."&gt;: %s\n&lt;"..emp.."&gt; Magic Evasion&lt;"..div.."&gt;: %s&lt;"..emp.."&gt;  Accuracy&lt;"..div.."&gt;: %s&lt;"..emp.."&gt; Magic Armor&lt;"..div.."&gt;: %s",
+gmcp.Char.Stats.str,
+gmcp.Char.Stats.agi,
+gmcp.Char.Stats.vit,
+gmcp.Char.Stats.int,
+gmcp.Char.Stats.spd,
+gmcp.Char.Stats.spr,
+gmcp.Char.Stats.eva,
+gmcp.Char.Stats.crit,
+gmcp.Char.Stats.arm,
+gmcp.Char.Stats.meva,
+gmcp.Char.Stats.acc,
+gmcp.Char.Stats.marm
+))
+end</script>
 					<eventHandlerList />
 				</Script>
 			</ScriptGroup>
@@ -1405,22 +1565,30 @@ end</script>
 					<Script isActive="yes" isFolder="no">
 						<name>updateRoomPlayers</name>
 						<packageName></packageName>
-						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
+						<script>-- NTS NEEDS UPDATING TO REAL GMCP, ALSO COLOR CHECK FOR PLAYERS VERSUS LEGENDS.
 
 function asui.updateRoomplayers()
 local fText = require("ASUI.ftext")
 local conWidth = asui.roomplayersDisp.wrapAt
+local fakePlayers = {}
+local div = asui.settings.colors.divider
 
 -- Check if GMCP even exists.
 
--- if gmcp.Room.Chars == nil then return end
+if gmcp.Room == nil then return end
  
  -- We have data, let's display it.
 asui.roomplayersDisp:clear()
 cecho("asui.roomplayersDisp",fText.fText("Players", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.roomplayersDisp", "\n\n")
+if table.is_empty(fakePlayers) then
+  cecho("asui.roomplayersDisp", fText.fText("&lt;None&gt;",{width = conWidth, alignment = "center", inside = false}))
+else
+  cecho("asui.roomplayersDisp", "&lt;"..div.."&gt;[&lt;gold&gt;"..#fakePlayers.."&lt;"..div.."&gt;]: &lt;grey&gt;"..table.concat(fakePlayers, ", "))
+  end
 end
 
-registerAnonymousEventHandler("gmcp.Room.Chars", "asui.updateRoomplayers")</script>
+registerAnonymousEventHandler("gmcp.Room", "asui.updateRoomplayers")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -1488,6 +1656,10 @@ function asui.updateRoomdenizens()
 local fText = require("ASUI.ftext")
 local conWidth = asui.roomdenizensDisp.wrapAt
 
+-- temp variable for dummy display.
+
+asui.roomDenizens = {}
+
 -- Check if GMCP even exists.
 
  if gmcp.Char == nil then return end
@@ -1495,9 +1667,11 @@ local conWidth = asui.roomdenizensDisp.wrapAt
  -- We have data, let's display it.
 asui.roomdenizensDisp:clear()
 cecho("asui.roomdenizensDisp",fText.fText("Denizens", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+if table.is_empty(asui.roomDenizens) then
+  cecho("asui.roomdenizensDisp", fText.fText("&lt;None&gt;",{width = conWidth, alignment = "center", inside = false}))
 end
-
-registerAnonymousEventHandler("gmcp.Room.Char", "asui.updateRoomdenizens")</script>
+end
+registerAnonymousEventHandler("gmcp.Room", "asui.updateRoomdenizens")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
@@ -1558,23 +1732,149 @@ end</script>
 					<Script isActive="yes" isFolder="no">
 						<name>updateRoomItems</name>
 						<packageName></packageName>
-						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE.
+						<script>-- NTS PARSE ITEMS NEEDS TO CHECK WHICH ITEM DISPLAY WE'RE USING. ALSO, ADD VARIABLES FOR COLORS.
 
 function asui.updateRoomitems()
 
 local fText = require("ASUI.ftext")
 local conWidth = asui.roomitemsDisp.wrapAt
+local div = asui.settings.colors.divider
+
+-- Check if GMCP even exists.
+
+ if gmcp.Room.Contents == nil then return end
+ 
+-- Gather the data from GMCP.
+
+function asui.parseItems()
+asui.roomItems = {}
+
+contents = gmcp.Room.Contents
+
+for item, cat in ipairs(contents) do
+asui.roomItems[cat.guid] = {} -- sort items by their ID.
+asui.roomItems[cat.guid].id = cat.guid -- so we can output the ID too.
+asui.roomItems[cat.guid].name = cat.name -- item name
+asui.roomItems[cat.guid].stack = cat.stack -- assign stack value. 0 means it can't stack.
+end
+asui.updateRoomitems()
+end
+
+
+-- We have data, let's display it.
+asui.roomitemsDisp:clear()
+cecho("asui.roomitemsDisp",fText.fText("Items", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.roomitemsDisp", "\n\n")
+  if table.is_empty(asui.roomItems) then
+  cecho("asui.roomitemsDisp", fText.fText("&lt;None&gt;",{width = conWidth, alignment = "center", inside = false}))
+else
+    for k,v in pairs(asui.roomItems) do
+    if v.stack &gt; 0 then
+      cecho("asui.roomitemsDisp", "&lt;white&gt;"..asui.roomItems[k].id.."&lt;grey&gt;| &lt;DeepSkyBlue&gt;"..asui.roomItems[k].name.."&lt;"..div.."&gt; (&lt;DeepSkyBlue&gt;"..asui.roomItems[k].stack.."&lt;"..div.."&gt;)\n")
+    else
+      cecho("asui.roomitemsDisp", "&lt;white&gt;"..asui.roomItems[k].id.."&lt;grey&gt;| &lt;DeepSkyBlue&gt;"..asui.roomItems[k].name.."\n")
+      end
+    end
+  end
+end
+
+registerAnonymousEventHandler("gmcp.Room.Contents", "asui.parseItems")</script>
+						<eventHandlerList />
+					</Script>
+				</ScriptGroup>
+				<ScriptGroup isActive="yes" isFolder="yes">
+					<name>DI Combo</name>
+					<packageName></packageName>
+					<script>-- A single element for deinizens, and items.</script>
+					<eventHandlerList />
+					<Script isActive="yes" isFolder="no">
+						<name>buildRoomDenizensAndItems</name>
+						<packageName></packageName>
+						<script>--NTS CHANGE FONT TO VARIABLE.
+
+-- Miniconsole that displays both denizens and items.
+
+function asui.buildRoomdenizensanditems()
+
+asui.roomdenizensanditems = {}
+
+-- First build a container for the console.
+
+asui.roomdenizensanditems.window = Adjustable.Container:new({
+  name = "asui.roomdenizensanditems.window",
+    x = 0, y = 0,
+    width = "50%",
+    height = "50%",  
+    adjLabelstyle = asui.adjLabelstyle,
+    attachedMargin = 5,
+    padding = 8,
+    buttonstyle=[[
+      QLabel{ border-radius: 5px; background-color: rgba(140,140,140,100%);}
+      QLabel::hover{ background-color: rgba(160,160,160,50%);}
+    ]],
+    buttonFontSize = 10,
+    buttonsize = 15,          
+}, main)
+
+-- Then build the console.
+
+asui.roomdenizensanditemsDisp = Geyser.MiniConsole:new({
+  name="asui.roomdenizensanditemsDisp",
+  x = 0, y = 0,
+  width="100%", height="100%",
+  color = "black",
+  autoWrap = true,
+  scrollBar = false,
+  font = "FixedSys",
+  fontSize = asui.settings.roomdenizensanditemsSize,
+}, asui.roomdenizensanditems.window)
+asui.roomdenizensanditems.window:show()
+
+  if not table.contains(asui.modules, "Roomdenizensanditems") then
+    table.insert(asui.modules, "Roomdenizensanditems")
+  end
+end</script>
+						<eventHandlerList />
+					</Script>
+					<Script isActive="yes" isFolder="no">
+						<name>updateRoomDenizensAndItems</name>
+						<packageName></packageName>
+						<script>-- NTS TO BE ADDED WHEN GMCP IS AVAILABLE. ALSO, ADD VARIABLES.
+
+function asui.updateRoomdenizensanditems()
+local fText = require("ASUI.ftext")
+local conWidth = asui.roomdenizensanditemsDisp.wrapAt
+local div = asui.settings.colors.divider
 
 -- Check if GMCP even exists.
 
  if gmcp.Room == nil then return end
  
  -- We have data, let's display it.
-asui.roomitemsDisp:clear()
-cecho("asui.roomitemsDisp",fText.fText("Items", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
-cecho("asui.roomitemsDisp", "\n\n12345| Test item.\n")end
+asui.roomdenizensanditemsDisp:clear()
+cecho("asui.roomdenizensanditemsDisp",fText.fText("Denizens", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.roomdenizensanditemsDisp","\n\n")
+if table.is_empty(asui.roomDenizens) then
+  cecho("asui.roomdenizensanditemsDisp", fText.fText("&lt;None&gt;",{width = conWidth, alignment = "center", inside = false}))
+end
+echo("asui.roomdenizensanditemsDisp","\n\n")
+cecho("asui.roomdenizensanditemsDisp",fText.fText("Items", {width = conWidth, alignment = "center", formatType = "c", textColor = "&lt;white&gt;", capColor = "&lt;gold&gt;", cap = "#", spacerColor = "&lt;ansi_027&gt;", spacer = "-", inside = false, mirror = true}))
+echo("asui.roomdenizensanditemsDisp", "\n\n")
+  if table.is_empty(asui.roomItems) then
+  cecho("asui.roomdenizensanditemsDisp", fText.fText("&lt;None&gt;",{width = conWidth, alignment = "center", inside = false}))
+else
+    for k,v in pairs(asui.roomItems) do
+    if v.stack &gt; 0 then
+      cecho("asui.roomdenizensanditemsDisp", "&lt;white&gt;"..asui.roomItems[k].id.."&lt;grey&gt;| &lt;DeepSkyBlue&gt;"..asui.roomItems[k].name.."&lt;"..div.."&gt; (&lt;DeepSkyBlue&gt;"..asui.roomItems[k].stack.."&lt;"..div.."&gt;)\n")
+    else
+      cecho("asui.roomdenizensanditemsDisp", "&lt;white&gt;"..asui.roomItems[k].id.."&lt;grey&gt;| &lt;DeepSkyBlue&gt;"..asui.roomItems[k].name.."\n")
+      end
+    end
+  end
+end
 
-registerAnonymousEventHandler("gmcp.Room.Items", "asui.updateRoomitems")</script>
+registerAnonymousEventHandler("gmcp.Room", "asui.updateRoomdenizensanditems")
+registerAnonymousEventHandler("gmcp.Room.Contents", "asui.parseItems")</script>
 						<eventHandlerList />
 					</Script>
 				</ScriptGroup>
